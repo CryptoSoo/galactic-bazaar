@@ -39,7 +39,7 @@ export default function LogConsole({ logs, onClear }: LogConsoleProps) {
 
       <div
         ref={containerRef}
-        className="h-32 overflow-y-auto space-y-1.5 scrollbar-thin text-right pr-1"
+        className="h-64 overflow-y-auto space-y-1.5 scrollbar-thin text-right pr-1"
         dir="rtl"
       >
         {logs.length === 0 ? (

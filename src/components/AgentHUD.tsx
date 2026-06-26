@@ -10,9 +10,10 @@ interface AgentHUDProps {
   agent: Agent | null;
   loading: boolean;
   onRefresh: () => void;
+  resetTime?: string;
 }
 
-export default function AgentHUD({ agent, loading, onRefresh }: AgentHUDProps) {
+export default function AgentHUD({ agent, loading, onRefresh, resetTime }: AgentHUDProps) {
   if (!agent) {
     return (
       <div className="pixel-box bg-slate-900/60 p-4 animate-pulse flex items-center justify-center text-slate-400">
@@ -26,7 +27,7 @@ export default function AgentHUD({ agent, loading, onRefresh }: AgentHUDProps) {
       {/* Background neon glow */}
       <div className="absolute top-0 right-0 w-24 h-24 bg-terminal-cyan/5 blur-xl pointer-events-none" />
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         {/* Name and faction */}
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-none bg-terminal-cyan/10 border-2 border-terminal-cyan flex items-center justify-center relative">
@@ -49,7 +50,7 @@ export default function AgentHUD({ agent, loading, onRefresh }: AgentHUDProps) {
         </div>
 
         {/* Currency & Base info */}
-        <div className="grid grid-cols-2 gap-4 w-full sm:w-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full lg:w-auto flex-1 lg:flex-initial lg:max-w-4xl">
           {/* Credits */}
           <div className="bg-slate-950/80 p-2 border border-slate-800/80 flex items-center gap-3 justify-end rounded-sm">
             <div className="text-right">
@@ -67,12 +68,29 @@ export default function AgentHUD({ agent, loading, onRefresh }: AgentHUDProps) {
           <div className="bg-slate-950/80 p-2 border border-slate-800/80 flex items-center gap-3 justify-end rounded-sm">
             <div className="text-right">
               <span className="text-[10px] text-slate-500 block">تعداد ناوگان / ستاد</span>
-              <span className="text-xs font-bold text-terminal-cyan block truncate max-w-[130px] font-mono">
+              <span className="text-xs font-bold text-terminal-cyan block truncate max-w-[170px] font-mono">
                 {agent.shipCount} سفینه • {agent.headquarters.split('-')[0]}
               </span>
             </div>
             <div className="p-1.5 bg-terminal-cyan/10 border border-terminal-cyan/30 text-terminal-cyan">
               <Landmark size={16} />
+            </div>
+          </div>
+
+          {/* Server Reset Info */}
+          <div className="bg-slate-950/80 p-2 border border-slate-800/80 flex items-center gap-3 justify-end rounded-sm">
+            <div className="text-right">
+              <span className="text-[10px] text-slate-500 block">ریست بعدی سرور (مستندات API)</span>
+              <span className="text-xs font-bold text-terminal-green block font-sans">
+                {resetTime ? (
+                  `${new Date(resetTime).toLocaleDateString('fa-IR')} (${new Date(resetTime).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })})`
+                ) : (
+                  'در حال دریافت از فدراسیون...'
+                )}
+              </span>
+            </div>
+            <div className="p-1.5 bg-terminal-green/10 border border-terminal-green/30 text-terminal-green">
+              <Orbit size={16} className="animate-spin" style={{ animationDuration: '8s' }} />
             </div>
           </div>
         </div>
@@ -81,11 +99,11 @@ export default function AgentHUD({ agent, loading, onRefresh }: AgentHUDProps) {
         <button
           onClick={onRefresh}
           disabled={loading}
-          className="p-2 border border-terminal-cyan/40 hover:border-terminal-cyan bg-slate-950 hover:bg-terminal-cyan/10 text-terminal-cyan transition-all flex items-center justify-center cursor-pointer w-full sm:w-auto"
+          className="p-2 border border-terminal-cyan/40 hover:border-terminal-cyan bg-slate-950 hover:bg-terminal-cyan/10 text-terminal-cyan transition-all flex items-center justify-center cursor-pointer w-full lg:w-auto"
           title="بروزرسانی داده‌های سفینه"
         >
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          <span className="sm:hidden mr-2 font-sans text-xs">بروزرسانی وضعیت</span>
+          <span className="lg:hidden mr-2 font-sans text-xs">بروزرسانی وضعیت</span>
         </button>
       </div>
     </div>

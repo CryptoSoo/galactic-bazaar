@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { Briefcase, Clock, ShieldCheck, CheckCircle2, ChevronRight, HelpCircle } from 'lucide-react';
 import { Contract, Ship } from '../types';
-import { translateCargoName } from '../utils/api';
+import { translateCargoName, getShipNickname } from '../utils/api';
 
 interface ContractsPanelProps {
   contracts: Contract[];
@@ -28,6 +28,7 @@ export default function ContractsPanel({
   const [selectedShipSymbol, setSelectedShipSymbol] = useState<string>('');
   const [deliverAmount, setDeliverAmount] = useState<number>(1);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const handleAccept = async (id: string) => {
     setActionLoading(id + '-accept');
@@ -87,6 +88,53 @@ export default function ContractsPanel({
 
   return (
     <div className="space-y-4" dir="rtl">
+      {/* 1. CONTRACTS HEADER WITH ? BUTTON */}
+      <div className="pixel-box bg-slate-950 p-3 border-slate-800 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-bold text-slate-300 font-sans">بخش دیپلماسی و قراردادهای کهکشانی</span>
+          <span className="text-[10px] text-terminal-amber bg-terminal-amber/10 px-1 border border-terminal-amber/30">دفتر بازرگانی فدراسیون</span>
+        </div>
+        <button
+          onClick={() => setShowHelp(!showHelp)}
+          className="px-2 py-1 bg-slate-900 border border-terminal-amber text-terminal-amber hover:bg-terminal-amber hover:text-slate-950 text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+          title="راهنمای عهده‌داری قراردادها"
+        >
+          <span>؟</span>
+          <span>راهنمای قراردادها</span>
+        </button>
+      </div>
+
+      {/* TUTORIAL BOX */}
+      {showHelp && (
+        <div className="pixel-box bg-slate-950 border-terminal-amber p-4 text-right space-y-2 animate-fade-in">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span className="text-xs font-bold text-terminal-amber font-sans">مرجع تدارکات و پیمانکاری (فدراسیون متحد تجارت)</span>
+            <button 
+              onClick={() => setShowHelp(false)}
+              className="text-slate-500 hover:text-slate-300 text-xs font-bold"
+            >
+              [بستن ✕]
+            </button>
+          </div>
+          <div className="text-xs text-slate-300 space-y-2 leading-relaxed font-sans">
+            <p>
+              به بخش <span className="text-terminal-amber font-bold">بایگانی قراردادهای تجاری کهکشان</span> خوش آمدید! در این جا می‌توانید برای فراکسیون‌های بزرگ کار کرده و مبالغ هنگفتی پاداش دریافت کنید:
+            </p>
+            <ul className="list-disc pr-4 space-y-1 text-slate-400">
+              <li>
+                <span className="text-terminal-cyan font-bold">پذیرش قرارداد (Accept):</span> قرارداد را امضا کنید تا بخشی از مبلغ قرارداد به عنوان پیش‌پرداخت فضایی فوراً به حسابتان واریز شود.
+              </li>
+              <li>
+                <span className="text-terminal-amber font-bold">تأمین و تحویل کالا (Deliver):</span> کالای درخواستی (مثلاً سنگ آهن یا هیدروژن) را با استخراج یا خرید جمع‌آوری کنید. سفینه حامل کالا را به ایستگاه مقصد بفرستید، پهلو بدهید (Docked)، سپس از گزینه تحویل کالا در این صفحه استفاده کنید.
+              </li>
+              <li>
+                <span className="text-terminal-green font-bold">تسویه نهایی (Fulfill):</span> پس از تحویل ۱۰۰٪ حجم درخواستی کالا، دکمه تسویه نهایی فعال می‌شود. آن را بفشارید تا تسویه نهایی به اتمام رسیده و مانده پاداش را تماماً دریافت کنید.
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}
+
       {contracts.map((contract) => {
         const isAccepted = contract.accepted;
         const isFulfilled = contract.fulfilled;
@@ -214,9 +262,11 @@ export default function ContractsPanel({
                           <option value="">-- انتخاب سفینه پهلو گرفته جهت تحویل بار --</option>
                           {getEligibleShipsForDelivery(deliverInfo.tradeSymbol, deliverInfo.destinationSymbol).map((ship) => {
                             const units = ship.cargo.inventory.find((i) => i.symbol === deliverInfo.tradeSymbol)?.units || 0;
+                            const nickname = getShipNickname(ship.symbol);
+                            const displayName = nickname ? `${ship.symbol} (${nickname})` : ship.symbol;
                             return (
                               <option key={ship.symbol} value={ship.symbol}>
-                                {ship.symbol} ({units} واحد {translateCargoName(deliverInfo.tradeSymbol, deliverInfo.tradeSymbol)} موجود)
+                                {displayName} ({units} واحد {translateCargoName(deliverInfo.tradeSymbol, deliverInfo.tradeSymbol)} موجود)
                               </option>
                             );
                           })}

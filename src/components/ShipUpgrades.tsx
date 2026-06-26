@@ -17,7 +17,7 @@ import {
   getSupabaseSyncStatus,
   ShipUpgrades as ShipUpgradesType
 } from '../utils/upgradeEngine';
-import { translateCargoName } from '../utils/api';
+import { translateCargoName, getShipNickname } from '../utils/api';
 
 interface ShipUpgradesProps {
   ship: Ship | null;
@@ -37,6 +37,8 @@ export default function ShipUpgrades({
   const [isSyncing, setIsSyncing] = useState(false);
   const [activeStatTab, setActiveStatTab] = useState<'speed' | 'cargo' | 'shield' | 'drill'>('speed');
 
+  const [showHelp, setShowHelp] = useState(false);
+
   // Load upgrades when ship is selected or changed
   useEffect(() => {
     if (ship) {
@@ -51,7 +53,7 @@ export default function ShipUpgrades({
     setTimeout(() => {
       setIsSyncing(false);
       setSyncStatus(getSupabaseSyncStatus());
-      addLog('💾 پایگاه داده Supabase: تمام رکوردهای سفارشی‌سازی ناوگان همگام‌سازی شدند.', 'success');
+      addLog('💾 پایگاه داده کهکشانی: تمام رکوردهای سفارشی‌سازی ناوگان فضایی همگام‌سازی و پایدار شدند.', 'success');
     }, 1200);
   };
 
@@ -127,24 +129,73 @@ export default function ShipUpgrades({
           <Database size={24} className="text-terminal-green animate-pulse" />
           <div className="text-right">
             <h4 className="text-xs font-bold text-slate-400 font-sans flex items-center gap-1.5">
-              <span>سیستم یکپارچه‌سازی پایگاه‌داده Supabase</span>
+              <span>سامانه ذخیره‌سازی پایگاه‌داده کهکشانی</span>
               <span className="inline-flex h-2 w-2 rounded-full bg-terminal-green animate-ping"></span>
-              <span className="text-[10px] text-terminal-green font-mono">LIVE</span>
+              <span className="text-[10px] text-terminal-green font-sans font-bold">برخط</span>
             </h4>
             <p className="text-[10px] text-slate-500 font-sans">
-              جدول مقصد: <span className="font-mono text-slate-400">{syncStatus.table}</span> | آخرین همگام‌سازی: {syncStatus.lastSync}
+              هسته اطلاعاتی: <span className="font-mono text-slate-400">{syncStatus.table}</span> | همگام‌سازی: {syncStatus.lastSync}
             </p>
           </div>
         </div>
-        <button
-          onClick={handleSyncDatabase}
-          disabled={isSyncing}
-          className="px-3 py-1.5 bg-slate-900 border border-terminal-green text-terminal-green hover:bg-terminal-green hover:text-slate-950 text-xs font-sans font-bold transition-all cursor-pointer flex items-center gap-1"
-        >
-          <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
-          <span>{isSyncing ? 'در حال ارسال کوئری...' : 'همگام‌سازی ابری'}</span>
-        </button>
+        
+        <div className="flex gap-2 items-center">
+          {/* INTERACTIVE HINT BUTTON "?" */}
+          <button
+            onClick={() => setShowHelp(!showHelp)}
+            className="h-8 w-8 bg-slate-900 border border-terminal-amber text-terminal-amber hover:bg-terminal-amber hover:text-slate-950 font-bold font-mono text-sm cursor-pointer transition-all flex items-center justify-center"
+            title="راهنمای کالیبراسیون و ارتقا"
+          >
+            ؟
+          </button>
+
+          <button
+            onClick={handleSyncDatabase}
+            disabled={isSyncing}
+            className="px-3 py-1.5 bg-slate-900 border border-terminal-green text-terminal-green hover:bg-terminal-green hover:text-slate-950 text-xs font-sans font-bold transition-all cursor-pointer flex items-center gap-1"
+          >
+            <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
+            <span>{isSyncing ? 'در حال ارسال کوئری...' : 'همگام‌سازی اطلاعات'}</span>
+          </button>
+        </div>
       </div>
+
+      {/* TUTORIAL BOX */}
+      {showHelp && (
+        <div className="pixel-box bg-slate-950 border-terminal-amber p-4 text-right space-y-2 animate-fade-in">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span className="text-xs font-bold text-terminal-amber font-sans">دفترچه راهنمای کالیبره و شخصی‌سازی (تکنیسین فدراسیون)</span>
+            <button 
+              onClick={() => setShowHelp(false)}
+              className="text-slate-500 hover:text-slate-300 text-xs font-bold"
+            >
+              [بستن ✕]
+            </button>
+          </div>
+          <div className="text-xs text-slate-300 space-y-2 leading-relaxed font-sans">
+            <p>
+              به بخش <span className="text-terminal-cyan font-bold">مهندسی و کالیبراسیون ناوگان</span> خوش آمدید! در این بخش می‌توانید مشخصات عملیاتی هر یک از سفینه‌های خود را ارتقا دهید:
+            </p>
+            <ul className="list-disc pr-4 space-y-1 text-slate-400">
+              <li>
+                <span className="text-terminal-cyan font-bold">پیشرانه سرعت:</span> کاهش زمان سفر بین ایستگاه‌ها (هر سطح ارتقاء ۱۰٪ زمان سفر کل را کاهش می‌دهد).
+              </li>
+              <li>
+                <span className="text-terminal-amber font-bold">کانتینر باربری:</span> گنجایش اضافی برای انبار کردن کالاها (هر سطح ارتقاء ۵ واحد کانتینر اضافه می‌کند).
+              </li>
+              <li>
+                <span className="text-terminal-green font-bold">سپر و مهار سوخت:</span> صرفه‌جویی در جیره سوخت مصرفی سفینه (هر سطح ارتقاء ۱۰٪ راندمان را افزایش می‌دهد).
+              </li>
+              <li>
+                <span className="text-terminal-cyan font-bold">مته مغناطیسی:</span> استخراج سریع‌تر سیارک‌ها و دریافت پاداش اعتباری (Credits) اضافی به ازای استخراج.
+              </li>
+            </ul>
+            <p className="text-[11px] text-terminal-amber/90">
+              💡 <span className="font-bold">نکته حیاتی:</span> سطوح بالاتر کالیبراسیون علاوه بر کوین‌های اعتباری، به <span className="text-slate-200 underline">کانی‌های استخراج شده یا کالاهای تهیه شده از بازار</span> (مانند سنگ‌آهن، سنگ‌مس، پلاتین، کوارتز، قطعات الکترونیکی و...) که داخل کانتینر همان سفینه بارگیری شده باشند، نیاز دارند!
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* COMPONENT TITLE & RETRO SPACESHIP DISPLAY */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -152,7 +203,7 @@ export default function ShipUpgrades({
         {/* Schematic Layout (Visual ASCII Pixel-art) */}
         <div className="pixel-box bg-slate-900/90 border-slate-800 p-4 flex flex-col justify-between items-center text-center lg:col-span-1">
           <div>
-            <span className="text-[10px] text-slate-500 font-mono block">SCHEMATIC ID: ST-{ship.symbol.slice(-4)}</span>
+            <span className="text-[10px] text-slate-500 font-mono block">شناسه نقشه فنی: ST-{ship.symbol.slice(-4)}</span>
             <h4 className="text-xs font-bold text-slate-300 font-sans mt-0.5">نقشه سخت‌افزاری کالیبره</h4>
           </div>
           
@@ -180,6 +231,12 @@ export default function ShipUpgrades({
               <span className="text-slate-500">کد ثبتی</span>
               <span className="text-terminal-cyan font-bold">{ship.symbol}</span>
             </div>
+            {getShipNickname(ship.symbol) && (
+              <div className="bg-slate-950 py-1.5 px-2 border border-slate-850 rounded text-xs flex justify-between font-sans">
+                <span className="text-slate-500">لقب ترانسپوندر</span>
+                <span className="text-terminal-amber font-bold">{getShipNickname(ship.symbol)}</span>
+              </div>
+            )}
             <div className="bg-slate-950 py-1.5 px-2 border border-slate-850 rounded text-xs flex justify-between font-mono">
               <span className="text-slate-500">ظرفیت بارگیری</span>
               <span className="text-terminal-amber font-bold">{ship.cargo.capacity} (+{(upgrades?.cargoLevel || 0) * 5}) واحد</span>

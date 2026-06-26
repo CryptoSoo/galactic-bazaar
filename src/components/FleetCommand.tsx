@@ -9,7 +9,7 @@ import {
   ChevronDown, ChevronUp, Hammer, Database, Layers, Radio
 } from 'lucide-react';
 import { Ship } from '../types';
-import { translateShipRole, translateCargoName } from '../utils/api';
+import { translateShipRole, translateCargoName, getShipNickname, saveShipNickname } from '../utils/api';
 
 interface FleetCommandProps {
   ships: Ship[];
@@ -36,6 +36,8 @@ export default function FleetCommand({
   const [timers, setTimers] = useState<{ [key: string]: number }>({});
   const [cooldowns, setCooldowns] = useState<{ [key: string]: number }>({});
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Initialize and run countdown timers for ships in transit and on cooldown
   useEffect(() => {
@@ -139,6 +141,56 @@ export default function FleetCommand({
 
   return (
     <div className="space-y-3" dir="rtl">
+      {/* 1. CONTROL HEADER WITH ? BUTTON */}
+      <div className="pixel-box bg-slate-950 p-3 border-slate-800 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-bold text-slate-300 font-sans">کنترل مرکزی ناوگان خلبانان</span>
+          <span className="text-[10px] text-terminal-cyan bg-terminal-cyan/10 px-1 border border-terminal-cyan/30">سیستم آنلاین</span>
+        </div>
+        <button
+          onClick={() => setShowHelp(!showHelp)}
+          className="px-2 py-1 bg-slate-900 border border-terminal-amber text-terminal-amber hover:bg-terminal-amber hover:text-slate-950 text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+          title="راهنمای ناوگان فضایی"
+        >
+          <span>؟</span>
+          <span>راهنمای پرواز</span>
+        </button>
+      </div>
+
+      {/* TUTORIAL BOX */}
+      {showHelp && (
+        <div className="pixel-box bg-slate-950 border-terminal-amber p-4 text-right space-y-2 animate-fade-in">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span className="text-xs font-bold text-terminal-amber font-sans">کتابچه راهنمای کاپیتان (عملیات و رانش)</span>
+            <button 
+              onClick={() => setShowHelp(false)}
+              className="text-slate-500 hover:text-slate-300 text-xs font-bold"
+            >
+              [بستن ✕]
+            </button>
+          </div>
+          <div className="text-xs text-slate-300 space-y-2 leading-relaxed font-sans">
+            <p>
+              به بخش <span className="text-terminal-cyan font-bold">فرماندهی و مانیتورینگ ناوگان</span> خوش آمدید! در این بخش می‌توانید سفینه‌های خود را هدایت کرده و وضعیت آن‌ها را بررسی کنید:
+            </p>
+            <ul className="list-disc pr-4 space-y-1 text-slate-400">
+              <li>
+                <span className="text-terminal-cyan font-bold">وضعیت پهلوگیری (Docked):</span> سفینه شما برای خرید و فروش در بازارگاه، سوخت‌گیری یا کالیبره شدن باید حتماً در ایستگاه پهلو بگیرد.
+              </li>
+              <li>
+                <span className="text-terminal-amber font-bold">وضعیت مدار (Orbit):</span> برای حرکت به ایستگاه‌های دیگر یا استخراج از معادن سیارکی، سفینه باید در مدار سیاره شناور باشد.
+              </li>
+              <li>
+                <span className="text-terminal-green font-bold">سوخت‌گیری مجدد (Refuel):</span> مصرف سوخت در پروازها رخ می‌دهد. برای سوخت‌گیری باید سفینه در ایستگاهی دارای بازار باشد و پهلو گرفته باشد.
+              </li>
+              <li>
+                <span className="text-terminal-cyan font-bold">استخراج معدنی (Extract):</span> سفینه‌های معدن‌کاوی خود را به یک سیارک (Asteroid) بفرستید، وارد مدار کنید و دکمه حفاری را فشار دهید تا منابع استخراج شوند.
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}
+
       {ships.map((ship) => {
         const isSelected = selectedShipSymbol === ship.symbol;
         const isExpanded = expandedShip === ship.symbol;
@@ -167,8 +219,13 @@ export default function FleetCommand({
                   {ship.registration.role === 'COMMAND' ? '🛸' : '🚜'}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono text-sm font-bold text-slate-100">{ship.symbol}</span>
+                    {getShipNickname(ship.symbol) && (
+                      <span className="text-xs font-bold text-terminal-cyan bg-terminal-cyan/10 px-1.5 py-0.5 border border-terminal-cyan/20">
+                        {getShipNickname(ship.symbol)}
+                      </span>
+                    )}
                     <span className="text-[9px] px-1 bg-slate-800 text-slate-400 font-sans">
                       {translateShipRole(ship.registration.role)}
                     </span>
@@ -281,6 +338,27 @@ export default function FleetCommand({
                       ))}
                     </div>
                   )}
+                </div>
+
+                {/* Custom Transponder Nickname Input */}
+                <div className="bg-slate-950 p-3 border border-slate-850 rounded">
+                  <h4 className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1 font-sans">
+                    <Radio size={12} className="text-terminal-amber" />
+                    <span>سیگنال ترانسپوندر (لقب و نام فرستنده سفینه)</span>
+                  </h4>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="یک لقب یا نام فارسی سفارشی برای این سفینه بنویسید..."
+                      value={getShipNickname(ship.symbol)}
+                      onChange={(e) => {
+                        saveShipNickname(ship.symbol, e.target.value);
+                        setRefreshKey((prev) => prev + 1);
+                      }}
+                      className="flex-1 bg-slate-900 border border-slate-800 text-xs px-2.5 py-1.5 text-slate-100 font-sans focus:border-terminal-cyan outline-none"
+                    />
+                    <span className="text-[10px] text-slate-500 self-center font-sans">ثبت و تغییر آنی 📡</span>
+                  </div>
                 </div>
 
                 {/* Operations Commands */}

@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { Compass, Info, MapPin, Eye, Zap, Landmark, ShoppingBag, Radio } from 'lucide-react';
 import { Waypoint, Ship } from '../types';
-import { translateWaypointType } from '../utils/api';
+import { translateWaypointType, getWaypointPersianName, getShipNickname, translateTraitName } from '../utils/api';
 
 interface SystemMapProps {
   waypoints: Waypoint[];
@@ -19,6 +19,7 @@ export default function SystemMap({ waypoints, ships, loading, onNavigate }: Sys
   const [selectedWaypoint, setSelectedWaypoint] = useState<Waypoint | null>(null);
   const [selectedShipSymbol, setSelectedShipSymbol] = useState<string>('');
   const [actionLoading, setActionLoading] = useState<boolean>(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Filter out unique systems or system name
   const systemName = waypoints[0]?.symbol.split('-').slice(0, 2).join('-') || 'منظومه محلی';
@@ -81,8 +82,49 @@ export default function SystemMap({ waypoints, ships, loading, onNavigate }: Sys
             <Compass size={18} className="animate-spin" />
             <h3 className="font-bold font-sans text-sm">رادار ناوبری منظومه: <span className="font-mono text-xs">{systemName}</span></h3>
           </div>
-          <span className="text-[9px] font-mono text-slate-500">HOLOMAP GRID v2.4</span>
+          
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={() => setShowHelp(!showHelp)}
+              className="h-6 w-6 bg-slate-900 border border-terminal-amber text-terminal-amber hover:bg-terminal-amber hover:text-slate-950 font-bold text-xs cursor-pointer transition-all flex items-center justify-center rounded-none"
+              title="راهنمای ناوبری و رادار"
+            >
+              ؟
+            </button>
+            <span className="text-[9px] font-mono text-slate-500">HOLOMAP GRID v2.4</span>
+          </div>
         </div>
+
+        {/* TUTORIAL BOX */}
+        {showHelp && (
+          <div className="pixel-box bg-slate-950 border-terminal-amber p-4 text-right space-y-2 mb-2 z-20 overflow-y-auto max-h-[300px]">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span className="text-xs font-bold text-terminal-amber font-sans">دفترچه فرکانس ناوبری کهکشانی (سیستم خلبانی خودکار)</span>
+              <button 
+                onClick={() => setShowHelp(false)}
+                className="text-slate-500 hover:text-slate-300 text-xs font-bold"
+              >
+                [بستن ✕]
+              </button>
+            </div>
+            <div className="text-xs text-slate-300 space-y-2 leading-relaxed font-sans">
+              <p>
+                به <span className="text-terminal-cyan font-bold">بخش برنامه‌ریزی ناوبری فضا-زمان</span> خوش آمدید! در این بخش می‌توانید فاصله نقاط منظومه را روی هولوگرام راداری سنجیده و سفینه‌های خود را گسیل کنید:
+              </p>
+              <ul className="list-disc pr-4 space-y-1 text-slate-400">
+                <li>
+                  <span className="text-terminal-cyan font-bold">رادار موقعیت‌یاب:</span> نقاط روی نقشه نشان‌دهنده سیارات (🪐)، قمرها (🌑)، کمربندهای سیارکی (☄️) و ایستگاه‌های مداری (🛰️) هستند.
+                </li>
+                <li>
+                  <span className="text-terminal-amber font-bold">انتخاب ایستگاه:</span> با کلیک بر روی هر نقطه در رادار، شناسنامه، مختصات موقعیتی، لیست سفینه‌های مستقر و کدهای تراکنش بازار و کشتی‌سازی آن نقطه فاش خواهد شد.
+                </li>
+                <li>
+                  <span className="text-terminal-green font-bold">پرواز فضایی و ناوبری:</span> پس از انتخاب نقطه مقصد، یکی از سفینه‌های خود را در نوار برنامه‌ریزی پایینی انتخاب کرده و دکمه <span className="text-slate-200">پرواز فضایی</span> را بفشارید. دقت کنید که سفینه نباید در وضعیت پهلو گرفته باشد و سوخت کافی در اختیار داشته باشد.
+                </li>
+              </ul>
+            </div>
+          </div>
+        )}
 
         {/* The Radar Grid Box */}
         <div className="flex-1 w-full bg-slate-900/40 relative border border-slate-800/80 rounded-sm">
@@ -155,9 +197,14 @@ export default function SystemMap({ waypoints, ships, loading, onNavigate }: Sys
                 <span className="text-[10px] text-terminal-cyan font-mono block tracking-wider" dir="ltr">
                   {selectedWaypoint.symbol}
                 </span>
-                <h4 className="text-base font-bold text-slate-100 flex items-center gap-1.5 font-sans mt-0.5">
-                  <span>{getWaypointIcon(selectedWaypoint.type)}</span>
-                  <span>{translateWaypointType(selectedWaypoint.type)}</span>
+                <h4 className="text-base font-bold text-slate-100 flex flex-col font-sans mt-0.5">
+                  <span className="flex items-center gap-1.5">
+                    <span>{getWaypointIcon(selectedWaypoint.type)}</span>
+                    <span>{translateWaypointType(selectedWaypoint.type)}</span>
+                  </span>
+                  <span className="text-xs text-terminal-amber mt-1 leading-normal font-sans">
+                    {getWaypointPersianName(selectedWaypoint.symbol, selectedWaypoint.type)}
+                  </span>
                 </h4>
               </div>
 
@@ -189,7 +236,7 @@ export default function SystemMap({ waypoints, ships, loading, onNavigate }: Sys
                         {trait.symbol === 'MARKETPLACE' && <ShoppingBag size={10} className="text-terminal-amber" />}
                         {trait.symbol === 'SHIPYARD' && <Landmark size={10} className="text-terminal-cyan" />}
                         {trait.symbol === 'OUTPOST' && <Radio size={10} className="text-terminal-green" />}
-                        <span>{trait.name}</span>
+                        <span>{translateTraitName(trait.symbol, trait.name)}</span>
                       </span>
                     ))}
                   </div>
@@ -203,14 +250,22 @@ export default function SystemMap({ waypoints, ships, loading, onNavigate }: Sys
                   <p className="text-[11px] text-slate-500 italic">هیچ سفینه‌ای در حال حاضر در این نقطه پهلو نگرفته است.</p>
                 ) : (
                   <div className="space-y-1">
-                    {getShipsAtWaypoint(selectedWaypoint.symbol).map((ship) => (
-                      <div key={ship.symbol} className="text-xs bg-slate-950/60 p-1.5 border border-slate-850 flex items-center justify-between font-mono">
-                        <span className="text-terminal-cyan font-bold">{ship.symbol}</span>
-                        <span className="text-[10px] px-1 bg-terminal-cyan/10 text-terminal-cyan border border-terminal-cyan/20">
-                          {ship.nav.status === 'DOCKED' ? 'پهلو گرفته' : 'مدار'}
-                        </span>
-                      </div>
-                    ))}
+                    {getShipsAtWaypoint(selectedWaypoint.symbol).map((ship) => {
+                      const nickname = getShipNickname(ship.symbol);
+                      return (
+                        <div key={ship.symbol} className="text-xs bg-slate-950/60 p-1.5 border border-slate-850 flex items-center justify-between font-mono">
+                          <div className="flex flex-col text-right">
+                            <span className="text-terminal-cyan font-bold">{ship.symbol}</span>
+                            {nickname && (
+                              <span className="text-[10px] text-terminal-amber font-sans">({nickname})</span>
+                            )}
+                          </div>
+                          <span className="text-[10px] px-1 bg-terminal-cyan/10 text-terminal-cyan border border-terminal-cyan/20">
+                            {ship.nav.status === 'DOCKED' ? 'پهلو گرفته' : 'مدار'}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -237,11 +292,18 @@ export default function SystemMap({ waypoints, ships, loading, onNavigate }: Sys
                     <option value="">-- انتخاب سفینه جهت پلات کورس --</option>
                     {ships
                       .filter((s) => s.nav.status !== 'IN_TRANSIT' && s.nav.waypointSymbol !== selectedWaypoint.symbol)
-                      .map((ship) => (
-                        <option key={ship.symbol} value={ship.symbol}>
-                          {ship.symbol} (مستقر در: {ship.nav.waypointSymbol.split('-').pop()} • سوخت: {ship.fuel.current}/{ship.fuel.capacity})
-                        </option>
-                      ))}
+                      .map((ship) => {
+                        const currentWp = waypoints.find((w) => w.symbol === ship.nav.waypointSymbol);
+                        const wpPersian = currentWp ? getWaypointPersianName(currentWp.symbol, currentWp.type) : '';
+                        const cleanSymbol = ship.nav.waypointSymbol.split('-').pop();
+                        const nickname = getShipNickname(ship.symbol);
+                        const displaySymbol = nickname ? `${ship.symbol} (${nickname})` : ship.symbol;
+                        return (
+                          <option key={ship.symbol} value={ship.symbol}>
+                            {displaySymbol} (مستقر در: {cleanSymbol} {wpPersian ? `[${wpPersian}]` : ''} • سوخت: {ship.fuel.current}/{ship.fuel.capacity})
+                          </option>
+                        );
+                      })}
                   </select>
 
                   <button

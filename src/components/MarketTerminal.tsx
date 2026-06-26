@@ -35,6 +35,7 @@ export default function MarketTerminal({
 }: MarketTerminalProps) {
   const [tradeAmount, setTradeAmount] = useState<{ [key: string]: number }>({});
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
   
   // Local state to force rerendering of prices when local storage changes (event triggers/trades)
   const [marketRefreshKey, setMarketRefreshKey] = useState(0);
@@ -171,14 +172,57 @@ export default function MarketTerminal({
 
       {/* 2. DOCKET SHIP INFO SUMMARY */}
       <div className="pixel-box bg-slate-950 p-3 border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-right">
-        <div>
-          <h4 className="text-xs font-bold text-slate-400 font-sans">پایگاه تجاری مستقر:</h4>
-          <span className="font-mono text-sm font-bold text-terminal-cyan">{market.symbol}</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowHelp(!showHelp)}
+            className="h-8 w-8 bg-slate-900 border border-terminal-amber text-terminal-amber hover:bg-terminal-amber hover:text-slate-950 font-bold text-sm cursor-pointer transition-all flex items-center justify-center shrink-0"
+            title="راهنمای جامع بازارگاه"
+          >
+            ؟
+          </button>
+          <div>
+            <h4 className="text-xs font-bold text-slate-400 font-sans">پایگاه تجاری مستقر:</h4>
+            <span className="font-mono text-sm font-bold text-terminal-cyan">{market.symbol}</span>
+          </div>
         </div>
         <div className="text-xs text-slate-300">
           سفینه متصل شده: <span className="font-mono text-terminal-cyan font-bold">{selectedShip.symbol}</span> (بار جاری: {selectedShip.cargo.units}/{selectedShip.cargo.capacity} واحد)
         </div>
       </div>
+
+      {/* TUTORIAL BOX */}
+      {showHelp && (
+        <div className="pixel-box bg-slate-950 border-terminal-amber p-4 text-right space-y-2 animate-fade-in">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span className="text-xs font-bold text-terminal-amber font-sans">بروشور راهنمای تجارت در کهکشان (مدیریت بازرگانی)</span>
+            <button 
+              onClick={() => setShowHelp(false)}
+              className="text-slate-500 hover:text-slate-300 text-xs font-bold"
+            >
+              [بستن ✕]
+            </button>
+          </div>
+          <div className="text-xs text-slate-300 space-y-2 leading-relaxed font-sans">
+            <p>
+              به <span className="text-terminal-cyan font-bold">بخش معاملات و بازرگانی بازارگاه</span> خوش آمدید! در این بخش می‌توانید کالاها را خرید و فروش کنید و از تفاوت قیمت‌ها سود کسب کنید:
+            </p>
+            <ul className="list-disc pr-4 space-y-1 text-slate-400">
+              <li>
+                <span className="text-terminal-amber font-bold">خرید کالا:</span> کالاها را با نرخ خرید تهیه کنید. همواره به گنجایش خالی کانتینر سفینه خود دقت کنید.
+              </li>
+              <li>
+                <span className="text-terminal-green font-bold">فروش کالا:</span> کالاهای استخراج‌شده از معادن سیارکی یا خریده شده را با نرخ فروش واگذار کنید تا اعتبار (Credits) بدست آورید.
+              </li>
+              <li>
+                <span className="text-terminal-red font-bold">رویدادهای خبری رادیو:</span> هر از چندگاهی اخبار کهکشان تغییر می‌کند که مستقیماً روی عرضه، تقاضا و در نتیجه قیمت شدید کالاها اثر دارد.
+              </li>
+              <li>
+                <span className="text-slate-200 font-bold">شبیه‌ساز اثر بازار:</span> معاملات بسیار سنگین شما بر روی یک کالا باعث نوسان قیمت آن در بازار محلی می‌شود. با فشردن دکمه پاکسازی می‌توانید آن اثر را ریست کنید.
+              </li>
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* 3. DYNAMIC COMMODITY LIST */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

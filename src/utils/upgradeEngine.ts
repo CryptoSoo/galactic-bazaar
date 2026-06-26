@@ -67,9 +67,9 @@ export function loadAllShipUpgrades(): { [shipSymbol: string]: ShipUpgrades } {
 // Save upgrades
 export function saveAllShipUpgrades(upgrades: { [shipSymbol: string]: ShipUpgrades }) {
   localStorage.setItem('spacetraders_ship_upgrades', JSON.stringify(upgrades));
-  // Mock Supabase sync status
-  localStorage.setItem('spacetraders_supabase_synced', 'true');
-  localStorage.setItem('spacetraders_supabase_last_sync', new Date().toISOString());
+  // Mock Galactic Database sync status
+  localStorage.setItem('spacetraders_galactic_db_synced', 'true');
+  localStorage.setItem('spacetraders_galactic_db_last_sync', new Date().toISOString());
 }
 
 // Get upgrades for a single ship
@@ -176,11 +176,11 @@ export function getModifiedExtractionYield(baseUnits: number, shipSymbol: string
 
 // Get database connection simulation state
 export function getSupabaseSyncStatus(): { connected: boolean; table: string; lastSync: string } {
-  const synced = localStorage.getItem('spacetraders_supabase_synced') === 'true';
-  const lastSync = localStorage.getItem('spacetraders_supabase_last_sync') || 'همگام‌سازی نشده';
+  const synced = localStorage.getItem('spacetraders_galactic_db_synced') === 'true';
+  const lastSync = localStorage.getItem('spacetraders_galactic_db_last_sync') || 'همگام‌سازی نشده';
   return {
     connected: true,
-    table: 'spacetraders_ship_upgrades_persisted',
-    lastSync: lastSync !== 'همگام‌سازی نشده' ? new Date(lastSync).toLocaleTimeString('fa-IR') : 'هرگز'
+    table: 'پایگاه_مستمر_ناوگان_کهکشانی',
+    lastSync: lastSync !== 'همگام‌سازی نشده' ? `${new Date(lastSync).toLocaleDateString('fa-IR')} (${new Date(lastSync).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })})` : 'هرگز'
   };
 }

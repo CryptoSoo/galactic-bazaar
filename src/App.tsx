@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 import { Agent, Contract, Ship, Waypoint, Market, Shipyard, LogMessage } from './types';
-import { request, translateCargoName } from './utils/api';
+import { request, translateCargoName, getServerResetTime } from './utils/api';
 
 import AgentHUD from './components/AgentHUD';
 import FleetCommand from './components/FleetCommand';
@@ -46,6 +46,7 @@ export default function App() {
   const [globalLoading, setGlobalLoading] = useState(false);
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
+  const [resetTime, setResetTime] = useState<string>('');
 
   // Stars background stars coordinates
   const [stars, setStars] = useState<Array<{ id: number; x: number; y: number; size: number; delay: string }>>([]);
@@ -70,7 +71,7 @@ export default function App() {
       type,
       timestamp: new Date().toLocaleTimeString('fa-IR'),
     };
-    setLogs((prev) => [...prev, newLog].slice(-50)); // Keep last 50 logs
+    setLogs((prev) => [...prev, newLog].slice(-100)); // Keep last 100 logs
   };
 
   // Error boundary helper
@@ -86,9 +87,10 @@ export default function App() {
     setGlobalLoading(true);
     setErrorBanner(null);
     try {
-      // 1. Fetch Agent Stats
+      // 1. Fetch Agent Stats & Reset time
       const agentData = await request<Agent>('/my/agent', 'GET', null, activeToken);
       setAgent(agentData);
+      getServerResetTime().then(setResetTime).catch(() => {});
 
       // 2. Fetch Contracts list
       const contractsList = await request<Contract[]>('/my/contracts', 'GET', null, activeToken);
@@ -622,7 +624,7 @@ export default function App() {
           </div>
 
           {/* User Stats HUD */}
-          <AgentHUD agent={agent} loading={globalLoading} onRefresh={() => loadGameData(token)} />
+          <AgentHUD agent={agent} loading={globalLoading} onRefresh={() => loadGameData(token)} resetTime={resetTime} />
 
           {/* Interactive Navigation System Tabs */}
           <div className="flex flex-wrap items-center bg-slate-950 p-1.5 border border-slate-800 gap-1" dir="rtl">
