@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;900&family=Press+Start+2P&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Vazirmatn", "Inter", system-ui, sans-serif;
+  --font-pixel: "Press Start 2P", monospace;
+  
+  --color-terminal-green: #00ff66;
+  --color-terminal-green-dim: rgba(0, 255, 102, 0.15);
+  --color-terminal-amber: #ffb700;
+  --color-terminal-cyan: #00f0ff;
+  --color-terminal-red: #ff3b30;
+  --color-retro-bg: #0d0f14;
+  --color-retro-card: #151a24;
+  --color-retro-border: #2d3748;
+}
+
+/* Base modifications for the pixel-art space trader aesthetic */
+body {
+  background-color: var(--color-retro-bg);
+  color: #e2e8f0;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  image-rendering: pixelated;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #090b10;
+}
+::-webkit-scrollbar-thumb {
+  background: #202738;
+  border: 2px solid #090b10;
+  border-radius: 0px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-terminal-cyan);
+}
+
+/* CRT Scanline Overlay */
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.25) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.06),
+    rgba(0, 255, 0, 0.02),
+    rgba(0, 0, 255, 0.06)
+  );
+  background-size: 100% 4px, 3px 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.85;
+}
+
+/* Pixel Border Utility */
+.pixel-box {
+  border: 4px solid var(--color-retro-border);
+  box-shadow: 
+    0 4px 0 -2px var(--color-retro-bg), 
+    0 -4px 0 -2px var(--color-retro-bg), 
+    4px 0 0 -2px var(--color-retro-bg), 
+    -4px 0 0 -2px var(--color-retro-bg);
+  position: relative;
+}
+
+.pixel-box-green {
+  border-color: var(--color-terminal-green);
+}
+
+.pixel-box-cyan {
+  border-color: var(--color-terminal-cyan);
+}
+
+.pixel-box-amber {
+  border-color: var(--color-terminal-amber);
+}
+
+.pixel-box-red {
+  border-color: var(--color-terminal-red);
+}
+
+/* Stars Background animation */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.star {
+  position: absolute;
+  background-color: white;
+  border-radius: 50%;
+  animation: twinkle infinite ease-in-out;
+}

@@ -1,0 +1,6 @@
+{
+  "name": "بازی تجارت فضایی - Space Traders",
+  "description": "یک بازی شبیه‌ساز تجارت و استخراج در فضای بیکران به زبان فارسی با رابط کاربری پیکسلی و ناوبری پیشرفته با استفاده از وب‌سایت SpaceTraders.io",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
