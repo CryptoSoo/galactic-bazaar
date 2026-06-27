@@ -25,7 +25,7 @@ import { getShipUpgrades } from './utils/upgradeEngine';
 export default function App() {
   // Authentication & Configuration State
   const [token, setToken] = useState<string>(() => localStorage.getItem('spacetraders_token') || '');
-  const [inputToken, setInputToken] = useState('eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZGVudGlmaWVyIjoiY21xdmJpdW5sMDAweHFsMTJuaXdqcHhqNiIsInZlcnNpb24iOiJ2Mi4zLjAiLCJpYXQiOjE3ODI1MDE4NzEsInN1YiI6ImFjY291bnQtdG9rZW4ifQ.ECPkr8F4onBo1fn9zkxWfg835qP3z3L9xK3OcVUOlpnkOJK50EjeIWEvikv6fjqnpLj-iMS246cj7sM4BJ73reFeT-k4YHnbkaCwYT4bzG5mgvIyelPjc5Q7PtQ1ElTVFpZ0oZM34bSc-dHByxgCckxC-4ToSsLhHjGDIsupuA-a-p8nXIRzXTWBQhDJwZyrj_KEaEprnkSszWkVbHxsTMQPhY3Yk8t4Tk-uYswwpkV1h32vWY2LSLAue5wxPeSbo3mpmgmnbrkUU1oGzGp-SNS7VNlhnRSKMfA3SRGFOQRs4piC-xxyAAV1XxubFysTtw6NpsmwuHlbHYr3iqAp9xs7putsw5-xBOdxHSErprnr1PIChyX6yO1MfDQZrzX6dQRUirP9RINLBtoY9MVWOR_jte5GZePcVrm7_PYResMvnSmX0Zq5QRv2tE8fPeAPcnXXzhGU9ldZcEArwNXR5cnOtfJeBALASQ07fzjxId0lanZ5hQv7uAVCOljpOQJOB8DV40njt3K1oXLGl2W90lzCiVmCx0R00NcBGN7n4OiF6bIjxGT_Cmw9n55srd8WJ1clVcQ2kdpSm9f-wXmfXo5ZrLs6RUOvz1Epywc0g2SZeMDPjTuGy8fzHsrUT4e9494X92raLxrsvZOZQmcLHDy4TM5YGb9UEvG5AWqFqeg');
+  const [inputToken, setInputToken] = useState('');
   const [registerSymbol, setRegisterSymbol] = useState('');
   const [registerFaction, setRegisterFaction] = useState('COSMIC');
   const [selectedAvatar, setSelectedAvatar] = useState('👨‍🚀');
@@ -89,7 +89,11 @@ export default function App() {
     try {
       // 1. Fetch Agent Stats & Reset time
       const agentData = await request<Agent>('/my/agent', 'GET', null, activeToken);
-      setAgent(agentData);
+      const mod = Number(localStorage.getItem(`spacetraders_credits_mod_${activeToken}`) || 0);
+      setAgent({
+        ...agentData,
+        credits: Math.max(0, agentData.credits + mod),
+      });
       getServerResetTime().then(setResetTime).catch(() => {});
 
       // 2. Fetch Contracts list
@@ -124,8 +128,25 @@ export default function App() {
       setWaypoints(waypointsList);
 
       addLog(`📡 ارتباط رادیویی مجدداً با سیستم مرکزی ${systemSymbol} برقرار شد.`, 'success');
-    } catch (e) {
+    } catch (e: any) {
       handleError(e);
+      const errMsg = e?.message || '';
+      if (
+        errMsg.includes('token') || 
+        errMsg.includes('Authorization') || 
+        errMsg.includes('Bearer') || 
+        errMsg.includes('401') || 
+        errMsg.includes('unauthorized') ||
+        errMsg.includes('اعتبار سنجی') ||
+        errMsg.includes('احراز هویت')
+      ) {
+        // Clear invalid token
+        localStorage.removeItem('spacetraders_token');
+        setToken('');
+        setAgent(null);
+        setErrorBanner('توکن شما معتبر نیست یا منقضی شده است (احتمالاً به دلیل ریست شدن دوره‌ای سرورهای رسمی SpaceTraders.io). لطفاً مأمور یا خلبان جدید ثبت کنید.');
+        addLog('⚠️ لغو اتصال: توکن معتبر نیست یا سرور ریست شده است. لطفاً مأمور جدید ثبت کنید.', 'error');
+      }
     } finally {
       setGlobalLoading(false);
     }
@@ -274,6 +295,7 @@ export default function App() {
     setContracts([]);
     setWaypoints([]);
     setSelectedShipSymbol('');
+    setErrorBanner(null);
     addLog('👋 خروج موفقیت‌آمیز. کدهای دسترسی پایگاه فضایی پاکسازی شدند.', 'warning');
   };
 
@@ -327,6 +349,8 @@ export default function App() {
       if (drillLevel > 0) {
         const bonusCredits = drillLevel * 1200;
         addLog(`⚡ تشعشع فوتونی مته ارتقاء یافته (سطح ${drillLevel}): کلوخه‌های معدنی دوردست تصفیه شده و معادل ${bonusCredits} ¤ به حساب شما واریز شد!`, 'success');
+        const currentMod = Number(localStorage.getItem(`spacetraders_credits_mod_${token}`) || 0);
+        localStorage.setItem(`spacetraders_credits_mod_${token}`, String(currentMod + bonusCredits));
         setAgent((prev) => prev ? { ...prev, credits: prev.credits + bonusCredits } : null);
       }
       
@@ -426,9 +450,12 @@ export default function App() {
 
   // Callback: Ship Upgrade Completed
   const handleUpgradeComplete = (costCredits: number) => {
-    setAgent((prev) => prev ? { ...prev, credits: Math.max(0, prev.credits - costCredits) } : null);
     if (token) {
+      const currentMod = Number(localStorage.getItem(`spacetraders_credits_mod_${token}`) || 0);
+      localStorage.setItem(`spacetraders_credits_mod_${token}`, String(currentMod - costCredits));
       loadGameData(token);
+    } else {
+      setAgent((prev) => prev ? { ...prev, credits: Math.max(0, prev.credits - costCredits) } : null);
     }
   };
 
