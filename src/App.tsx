@@ -24,7 +24,14 @@ import { getShipUpgrades } from './utils/upgradeEngine';
 
 export default function App() {
   // Authentication & Configuration State
-  const [token, setToken] = useState<string>(() => localStorage.getItem('spacetraders_token') || '');
+  const [token, setToken] = useState<string>(() => {
+    const saved = localStorage.getItem('spacetraders_token') || '';
+    if (saved === 'undefined' || saved === 'null' || saved.trim() === '' || saved.trim().length < 20) {
+      localStorage.removeItem('spacetraders_token');
+      return '';
+    }
+    return saved.trim();
+  });
   const [inputToken, setInputToken] = useState('');
   const [registerSymbol, setRegisterSymbol] = useState('');
   const [registerFaction, setRegisterFaction] = useState('COSMIC');
@@ -154,8 +161,11 @@ export default function App() {
 
   // Automatically trigger game load on token change
   useEffect(() => {
-    if (token) {
+    if (token && token !== 'undefined' && token !== 'null' && token.trim().length >= 20) {
       loadGameData(token);
+    } else if (token) {
+      localStorage.removeItem('spacetraders_token');
+      setToken('');
     }
   }, [token]);
 
@@ -225,9 +235,9 @@ export default function App() {
   const handleQuickStart = async () => {
     setGlobalLoading(true);
     setErrorBanner(null);
-    // Generate randomized Call Sign
-    const randomId = Math.floor(1000 + Math.random() * 9000);
-    const symbol = `P_IRAN_${randomId}`;
+    // Generate highly randomized and unique Call Sign (e.g. CAP_XXXXXX) to avoid conflicts
+    const randomId = Math.floor(100000 + Math.random() * 900000);
+    const symbol = `CAP_${randomId}`;
     try {
       const result = await fetch('https://api.spacetraders.io/v2/register', {
         method: 'POST',
@@ -257,7 +267,16 @@ export default function App() {
   // Manual register pilot
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    if (!registerSymbol.trim()) return;
+    const cleanSymbol = registerSymbol.trim().toUpperCase();
+    if (!cleanSymbol) return;
+
+    // Validate Symbol for SpaceTraders.io constraints (English alphanumeric, starts with letter, 3-14 chars)
+    if (!/^[A-Z][A-Z0-9_-]{2,13}$/.test(cleanSymbol)) {
+      setErrorBanner('شناسه خلبانی باید بین ۳ تا ۱۴ کاراکتر، فقط حاوی حروف انگلیسی (A-Z)، اعداد، خط تیره (-) یا خط زیرین (_) بوده و حتماً با یک حرف انگلیسی شروع شود.');
+      addLog('⚠️ خطای معتبرسازی: شناسه خلبانی نامعتبر است (از حروف انگلیسی و بدون فاصله استفاده کنید).', 'error');
+      return;
+    }
+
     setGlobalLoading(true);
     setErrorBanner(null);
     try {
@@ -265,7 +284,7 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          symbol: registerSymbol.trim().toUpperCase(),
+          symbol: cleanSymbol,
           faction: registerFaction,
         }),
       });
@@ -278,7 +297,7 @@ export default function App() {
       const newToken = json.data.token;
       localStorage.setItem('spacetraders_token', newToken);
       setToken(newToken);
-      addLog(`✨ مأمور جدید ${registerSymbol.toUpperCase()} با فرقه ${registerFaction} ایجاد شد!`, 'success');
+      addLog(`✨ مأمور جدید ${cleanSymbol} با فرقه ${registerFaction} ایجاد شد!`, 'success');
     } catch (e) {
       handleError(e);
     } finally {
@@ -450,12 +469,14 @@ export default function App() {
 
   // Callback: Ship Upgrade Completed
   const handleUpgradeComplete = (costCredits: number) => {
+    // 1. Instantly update local state for snappy visual feedback
+    setAgent((prev) => prev ? { ...prev, credits: Math.max(0, prev.credits - costCredits) } : null);
+
+    // 2. Persist in localStorage mod and reload
     if (token) {
       const currentMod = Number(localStorage.getItem(`spacetraders_credits_mod_${token}`) || 0);
       localStorage.setItem(`spacetraders_credits_mod_${token}`, String(currentMod - costCredits));
       loadGameData(token);
-    } else {
-      setAgent((prev) => prev ? { ...prev, credits: Math.max(0, prev.credits - costCredits) } : null);
     }
   };
 

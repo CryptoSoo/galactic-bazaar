@@ -8,14 +8,26 @@ const BASE_URL = 'https://api.spacetraders.io/v2';
 export function translateError(englishError: string): string {
   const err = englishError.toLowerCase();
   
+  if (err.includes('bearer token') || err.includes('missing token') || err.includes('bearer {token}')) {
+    return 'توکن امنیتی یافت نشد یا معتبر نیست. لطفاً مجدداً خلبان جدید بسازید یا وارد شوید.';
+  }
+  if (err.includes('already has been claimed') || err.includes('already claimed') || err.includes('symbol has already')) {
+    return 'این شناسه خلبانی قبلاً توسط خلبان دیگری ثبت شده است! لطفاً شناسه دیگری با حروف انگلیسی وارد کنید.';
+  }
+  if (err.includes('faction does not accept')) {
+    return 'این جناح در حال حاضر مأمور جدید نمی‌پذیرد. جناح دیگری انتخاب کنید.';
+  }
   if (err.includes('cooldown')) {
     return 'راکتور سفینه در حال خنک‌سازی است! لطفاً چند ثانیه صبر کنید.';
   }
   if (err.includes('insufficient funds') || err.includes('not have enough credits') || err.includes('credits')) {
     return 'اعتبار کافی برای انجام این تراکنش یا خرید وجود ندارد!';
   }
-  if (err.includes('cargo') && err.includes('capacity')) {
-    return 'ظرفیت مخزن بار سفینه پر شده است!';
+  if (err.includes('cargo') && (err.includes('limit') || err.includes('exceeds') || err.includes('capacity') || err.includes('space'))) {
+    return 'فضای کافی در مخزن بار سفینه وجود ندارد یا تراکنش بیش از حد مجاز انبار است!';
+  }
+  if (err.includes('cargo')) {
+    return 'خطا در مدیریت مخزن بار سفینه!';
   }
   if (err.includes('fuel') && err.includes('navigate')) {
     return 'سوخت سفینه برای ناوبری به این مقصد کافی نیست! ابتدا سوخت‌گیری کنید.';
@@ -41,6 +53,9 @@ export function translateError(englishError: string): string {
   if (err.includes('already at')) {
     return 'سفینه در حال حاضر در مقصد مورد نظر قرار دارد!';
   }
+  if (err.includes('content-type') || err.includes('body is an empty string')) {
+    return 'خطای فرمت درخواست ارتباطی با مرکز فرماندهی!';
+  }
 
   // General translated messages
   return englishError || 'خطای ناشناخته در ارتباط با شبکه کهکشان!';
@@ -63,7 +78,7 @@ export async function request<T>(
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,
+    body: body ? JSON.stringify(body) : (method === 'POST' ? '{}' : undefined),
   });
 
   const json = await response.json();
